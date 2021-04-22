@@ -12,7 +12,7 @@ RUN apt update \
 	&& export RUSTFLAGS="-C target-cpu=native" \
 	&& cd shadowsocks-rust \
 	&& rustup override set nightly \
-	&& cargo build --release \
+	&& cargo build --release --features trust-dns,aead-cipher-extra \
 	&& wget ${V2RAY_DOWNLOAD_URL} \
 	&& tar -xvf v2ray-plugin-linux-amd64-v1.3.1.tar.gz \
 	&& mv v2ray-plugin_linux_amd64 ./target/release/v2ray-plugin
