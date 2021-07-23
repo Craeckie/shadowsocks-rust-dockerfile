@@ -1,25 +1,14 @@
-FROM rust:latest AS build-env
+FROM rust:alpine
+#ENV V2RAY_DOWNLOAD_URL https://github.com/shadowsocks/v2ray-plugin/releases/download/v1.3.1/v2ray-plugin-linux-amd64-v1.3.1.tar.gz
 
-LABEL maintainer="RexProg <RexProg.Programmer@gmail.com>"
-
-ENV V2RAY_DOWNLOAD_URL https://github.com/shadowsocks/v2ray-plugin/releases/download/v1.3.1/v2ray-plugin-linux-amd64-v1.3.1.tar.gz
-ENV SHADOWSOCKS_RUST_GIT_URL https://github.com/shadowsocks/shadowsocks-rust.git
-
-RUN apt update \
-	&& apt upgrade -y \
-	&& apt install git \
-	&& git clone ${SHADOWSOCKS_RUST_GIT_URL} \
-	&& export RUSTFLAGS="-C target-cpu=native" \
-	&& cd shadowsocks-rust \
-	&& rustup override set nightly \
-	&& cargo build --release --features trust-dns,aead-cipher-extra \
-	&& wget ${V2RAY_DOWNLOAD_URL} \
-	&& tar -xvf v2ray-plugin-linux-amd64-v1.3.1.tar.gz \
-	&& mv v2ray-plugin_linux_amd64 ./target/release/v2ray-plugin
-
-FROM ubuntu:latest
-
-COPY --from=build-env /shadowsocks-rust/target/release /usr/bin
+RUN apk add build-base && \
+    rustup default nightly && \
+    cargo +nightly install --features trust-dns,aead-cipher-extra shadowsocks-rust && \
+    git clone https://github.com/Craeckie/v2ray-plugin.git && \
+    cd v2ray-plugin && go build && mv v2ray-plugin /usr/bin/ && cd .. && \
+    rm -r v2ray-plugin && \
+    apk del build-base
+    # curl -L "${V2RAY_DOWNLOAD_URL}" | tar -xvf - v2ray-plugin_linux_amd64 && \
+    # mv v2ray-plugin_linux_amd64 /usr/bin/v2ray-plugin
 
 CMD [ "ssserver", "-c", "/server.json"]
-
